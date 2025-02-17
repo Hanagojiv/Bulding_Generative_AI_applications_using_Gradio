@@ -77,36 +77,60 @@ This notebook builds an **Image Captioning Application** using the **BLIP model*
 ## 🧠 NLP Tasks with a Simple Interface
 
 ### 📝 Overview
-This notebook provides an **interactive UI** for performing various NLP tasks like **text generation, summarization, sentiment analysis, and translation**.
+
+This notebook provides an **interactive UI** for performing two NLP tasks: **text summarization** and **named entity recognition (NER)** using pre-trained transformer models.
+
+### 🚀 Models Used
+
+- **facebook/bart-large-cnn** (for summarization): A pre-trained transformer model designed for sequence-to-sequence tasks, particularly text summarization.
+- **dslim/bert-base-NER** (for named entity recognition): A BERT-based model fine-tuned to identify and categorize named entities like persons, organizations, and locations in text.
 
 ### 🚀 How It Works
+
 1. **Load Pre-trained Transformer Models** 🏗️
    ```python
    from transformers import pipeline
-   text_generator = pipeline("text-generation", model="gpt2")
-   summarizer = pipeline("summarization")
-   sentiment_analysis = pipeline("sentiment-analysis")
+   summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+   ner_recognizer = pipeline("ner", model="dslim/bert-base-NER")
    ```
 2. **Define NLP Processing Functions** 🧩
    ```python
-   def generate_text(prompt):
-       return text_generator(prompt, max_length=100)[0]['generated_text']
-
    def summarize_text(text):
        return summarizer(text, max_length=50, min_length=20, do_sample=False)[0]['summary_text']
 
-   def analyze_sentiment(text):
-       return sentiment_analysis(text)[0]
+   def extract_named_entities(text):
+       return ner_recognizer(text)
    ```
-3. **Build Gradio Interface** 🎨
+    ![Captioning3](/Images/NER1.png)
+
+3. **Group and Merge Named Entities**
+   ```python
+   def merge_named_entities(ner_results):
+       merged_entities = []
+       current_entity = None
+       for entity in ner_results:
+           if current_entity and entity["start"] == current_entity["end"]:
+               current_entity["word"] += entity["word"].replace("##", "")
+               current_entity["end"] = entity["end"]
+           else:
+               if current_entity:
+                   merged_entities.append(current_entity)
+               current_entity = entity
+       if current_entity:
+           merged_entities.append(current_entity)
+       return merged_entities
+   ```
+   
+4. **Build Gradio Interface** 🎨
    ```python
    gr.Interface(
-       fn=generate_text,
-       inputs=[gr.Textbox(lines=2, placeholder="Enter prompt")],
+       fn=summarize_text,
+       inputs=[gr.Textbox(lines=4, placeholder="Enter text for summarization")],
        outputs=[gr.Textbox()]
    ).launch()
    ```
-    ![NER](/Images/NER.png)
+   ![Captioning3](/Images/NER2.png)
+
 ---
 
 ## 🎯 Running the Notebooks
